@@ -6,7 +6,7 @@ from sqlalchemy import TIMESTAMP, text, ForeignKey, UniqueConstraint
 from sqlalchemy import Enum as SQLEnum
 
 class User(Base):
-    __tablename__ = "user"
+    __tablename__ = "users"
 
     id : Mapped[int] = mapped_column(primary_key=True)
     username: Mapped[str] = mapped_column(unique=True, nullable=False)
