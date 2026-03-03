@@ -73,7 +73,7 @@ def send_verification_email(user):
                 <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; margin-top: 40px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                     <tr>
                     <td style="padding: 40px; text-align: center;">
-                        <h2 style="color: #333333;">Welcome to Cabinet Medical, {user.fullname}!</h2>
+                        <h2 style="color: #333333;">Welcome to Cabinet Medical!</h2>
                         <p style="color: #555555; font-size: 16px; line-height: 1.5;">
                         Thank you for registering. Please verify your email address to get started.
                         </p>
@@ -108,7 +108,7 @@ def send_verification_code_email(user, code: str):
             <table align="center" width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; margin-top: 40px; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                 <tr>
                 <td style="padding: 40px; text-align: center;">
-                    <h2 style="color: #333333;">Welcome to Cabinet Medical, {user.fullname}!</h2>
+                    <h2 style="color: #333333;">Welcome to Cabinet Medical!</h2>
                     <p style="color: #555555; font-size: 16px; line-height: 1.5;">
                     Thank you for registering. Use the following code to verify your email address:
                     </p>

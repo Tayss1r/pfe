@@ -53,14 +53,18 @@ async def login(login_data: UserLogin, session: AsyncSession = Depends(get_sessi
 
     user = await UserService.get_user_by_email(email, session)
 
-    if user and verify(password, user.password):
+    if user and verify(password, user.hashed_password):
         if not user.is_verified:
             raise AccountNotVerified()
+
+        # Extract role names from user's roles relationship
+        role_names = [role.name for role in user.roles] if user.roles else []
+
         access_token = create_access_token(
             user_data={
                 "email": user.email,
                 "user_uid": str(user.id),
-                "role": user.role,
+                "roles": role_names,
             }
         )
         refresh_token = create_access_token(
@@ -73,7 +77,7 @@ async def login(login_data: UserLogin, session: AsyncSession = Depends(get_sessi
             content={
                 "message": "Login successful",
                 "access_token": access_token,
-                "user": {"email": user.email, "uid": str(user.id), "role": user.role},
+                "user": {"email": user.email, "uid": str(user.id), "roles": role_names},
             }
         )
 
@@ -385,7 +389,7 @@ async def reset_password_with_code(
         raise UserNotFound()
 
     # Update password
-    await UserService.update_user(user, {'password': hash(new_password)}, session)
+    await UserService.update_user(user, {'hashed_password': hash(new_password)}, session)
 
     # Invalidate code (single-use)
     await delete_reset_code(email)
