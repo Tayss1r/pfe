@@ -12,6 +12,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export default function RegisterPage() {
   const [step, setStep] = useState<'register' | 'verify'>('register');
@@ -21,7 +23,6 @@ export default function RegisterPage() {
     confirmPassword: '',
     username: '',
     fullname: '',
-    role: 'technicien' as 'technicien' | 'admin',
   });
   const [verificationCode, setVerificationCode] = useState('');
   const [error, setError] = useState('');
@@ -31,7 +32,7 @@ export default function RegisterPage() {
   const { register, verifyEmail, resendVerificationCode } = useAuth();
   const router = useRouter();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -42,7 +43,6 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -56,7 +56,6 @@ export default function RegisterPage() {
         password: formData.password,
         username: formData.username,
         fullname: formData.fullname,
-        role: formData.role,
       });
 
       setRegisteredEmail(response.email);
@@ -81,7 +80,6 @@ export default function RegisterPage() {
 
     try {
       await verifyEmail(registeredEmail, verificationCode);
-      // Redirect to login on success
       router.push('/login?verified=true');
     } catch (err: any) {
       if (err.response?.status === 400) {
@@ -108,261 +106,212 @@ export default function RegisterPage() {
 
   if (step === 'verify') {
     return (
-      <div style={{ maxWidth: '400px', margin: '100px auto', padding: '20px' }}>
-        <h1 style={{ marginBottom: '20px' }}>Verify Your Email</h1>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 py-12">
+        <div className="absolute top-4 right-4">
+          <ThemeToggle />
+        </div>
 
-        <p style={{ marginBottom: '20px', color: '#666' }}>
-          We've sent a 6-digit verification code to <strong>{registeredEmail}</strong>
-        </p>
-
-        <form onSubmit={handleVerifySubmit}>
-          <div style={{ marginBottom: '15px' }}>
-            <label htmlFor="code" style={{ display: 'block', marginBottom: '5px' }}>
-              Verification Code
-            </label>
-            <input
-              id="code"
-              type="text"
-              value={verificationCode}
-              onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              required
-              maxLength={6}
-              pattern="\d{6}"
-              placeholder="000000"
-              style={{
-                width: '100%',
-                padding: '8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                fontSize: '18px',
-                letterSpacing: '5px',
-                textAlign: 'center',
-              }}
-            />
-          </div>
-
-          {error && (
-            <div
-              style={{
-                padding: '10px',
-                marginBottom: '15px',
-                backgroundColor: '#fee',
-                color: '#c00',
-                borderRadius: '4px',
-                fontSize: '14px',
-              }}
-            >
-              {error}
+        <div className="w-full max-w-md">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 mb-4">
+                <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Verify Your Email</h1>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                We&apos;ve sent a 6-digit code to<br />
+                <strong className="text-gray-900 dark:text-white">{registeredEmail}</strong>
+              </p>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={isSubmitting || verificationCode.length !== 6}
-            style={{
-              width: '100%',
-              padding: '10px',
-              backgroundColor: isSubmitting || verificationCode.length !== 6 ? '#ccc' : '#28a745',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: isSubmitting || verificationCode.length !== 6 ? 'not-allowed' : 'pointer',
-              fontSize: '16px',
-              marginBottom: '10px',
-            }}
-          >
-            {isSubmitting ? 'Verifying...' : 'Verify Email'}
-          </button>
+            <form onSubmit={handleVerifySubmit} className="space-y-6">
+              <div>
+                <label htmlFor="code" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Verification Code
+                </label>
+                <input
+                  id="code"
+                  type="text"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  required
+                  maxLength={6}
+                  pattern="\d{6}"
+                  placeholder="000000"
+                  className="w-full px-4 py-4 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-center text-2xl tracking-[0.5em] font-mono focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                />
+              </div>
 
-          <button
-            type="button"
-            onClick={handleResendCode}
-            style={{
-              width: '100%',
-              padding: '10px',
-              backgroundColor: 'transparent',
-              color: '#007bff',
-              border: '1px solid #007bff',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-          >
-            Resend Code
-          </button>
-        </form>
+              {error && (
+                <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isSubmitting || verificationCode.length !== 6}
+                className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-green-600 hover:bg-green-700 focus:ring-4 focus:ring-green-200 dark:focus:ring-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
+              >
+                {isSubmitting ? 'Verifying...' : 'Verify Email'}
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResendCode}
+                className="w-full py-3 px-4 rounded-lg font-medium text-blue-600 dark:text-blue-400 border border-blue-600 dark:border-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+              >
+                Resend Code
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ maxWidth: '400px', margin: '100px auto', padding: '20px' }}>
-      <h1 style={{ marginBottom: '20px' }}>Register</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 px-4 py-12">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
 
-      <form onSubmit={handleRegisterSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="email" style={{ display: 'block', marginBottom: '5px' }}>
-            Email
-          </label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            required
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-            }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="username" style={{ display: 'block', marginBottom: '5px' }}>
-            Username (max 10 characters)
-          </label>
-          <input
-            id="username"
-            name="username"
-            type="text"
-            value={formData.username}
-            onChange={handleInputChange}
-            required
-            maxLength={10}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-            }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="fullname" style={{ display: 'block', marginBottom: '5px' }}>
-            Full Name (4-20 characters)
-          </label>
-          <input
-            id="fullname"
-            name="fullname"
-            type="text"
-            value={formData.fullname}
-            onChange={handleInputChange}
-            required
-            minLength={4}
-            maxLength={20}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-            }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="role" style={{ display: 'block', marginBottom: '5px' }}>
-            Role
-          </label>
-          <select
-            id="role"
-            name="role"
-            value={formData.role}
-            onChange={handleInputChange}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-            }}
-          >
-            <option value="technicien">Technicien</option>
-            <option value="admin">Admin</option>
-          </select>
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="password" style={{ display: 'block', marginBottom: '5px' }}>
-            Password (min 8 characters)
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            value={formData.password}
-            onChange={handleInputChange}
-            required
-            minLength={8}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-            }}
-          />
-        </div>
-
-        <div style={{ marginBottom: '15px' }}>
-          <label htmlFor="confirmPassword" style={{ display: 'block', marginBottom: '5px' }}>
-            Confirm Password
-          </label>
-          <input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleInputChange}
-            required
-            minLength={8}
-            style={{
-              width: '100%',
-              padding: '8px',
-              border: '1px solid #ccc',
-              borderRadius: '4px',
-            }}
-          />
-        </div>
-
-        {error && (
-          <div
-            style={{
-              padding: '10px',
-              marginBottom: '15px',
-              backgroundColor: '#fee',
-              color: '#c00',
-              borderRadius: '4px',
-              fontSize: '14px',
-            }}
-          >
-            {error}
+      <div className="w-full max-w-md">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-4">
+              <svg className="w-8 h-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Account</h1>
+            <p className="text-gray-600 dark:text-gray-400 mt-2">Join us today</p>
           </div>
-        )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          style={{
-            width: '100%',
-            padding: '10px',
-            backgroundColor: isSubmitting ? '#ccc' : '#28a745',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: isSubmitting ? 'not-allowed' : 'pointer',
-            fontSize: '16px',
-          }}
-        >
-          {isSubmitting ? 'Registering...' : 'Register'}
-        </button>
-      </form>
+          <form onSubmit={handleRegisterSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Email Address
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="you@example.com"
+              />
+            </div>
 
-      <div style={{ marginTop: '20px', textAlign: 'center' }}>
-        <a href="/login" style={{ color: '#007bff', textDecoration: 'none' }}>
-          Already have an account? Login
-        </a>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Username
+                </label>
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  required
+                  maxLength={10}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="john_doe"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="fullname" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Full Name
+                </label>
+                <input
+                  id="fullname"
+                  name="fullname"
+                  type="text"
+                  value={formData.fullname}
+                  onChange={handleInputChange}
+                  required
+                  minLength={4}
+                  maxLength={20}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  placeholder="John Doe"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Password
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                required
+                minLength={8}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="Min. 8 characters"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Confirm Password
+              </label>
+              <input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                required
+                minLength={8}
+                className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                placeholder="Confirm your password"
+              />
+            </div>
+
+            {error && (
+              <div className="p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full py-3 px-4 rounded-lg font-semibold text-white bg-purple-600 hover:bg-purple-700 focus:ring-4 focus:ring-purple-200 dark:focus:ring-purple-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-all"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Creating account...
+                </span>
+              ) : (
+                'Create Account'
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-gray-600 dark:text-gray-400">
+              Already have an account?{' '}
+              <Link href="/login" className="text-purple-600 dark:text-purple-400 hover:underline font-medium">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

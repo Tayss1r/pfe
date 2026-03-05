@@ -1,5 +1,6 @@
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from starlette.requests import Request
 
 from .services.user_service import UserService
 from .utils import decode_token
@@ -68,3 +69,35 @@ async def get_current_user(token_data=Depends(AccessTokenBearer()), session: Asy
     email = token_data['user']['email']
     user = await UserService.get_user_by_email(email, session)
     return user
+
+
+class RoleChecker:
+    """Dependency to check if user has required role(s)"""
+    
+    def __init__(self, allowed_roles: list[str]):
+        self.allowed_roles = allowed_roles
+
+    async def __call__(
+        self,
+        token_data: dict = Depends(AccessTokenBearer()),
+        session: AsyncSession = Depends(get_session),
+    ) -> bool:
+        user = await UserService.get_user_by_email(
+            token_data["user"]["email"], session
+        )
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found",
+            )
+
+        # Check if user has any of the allowed roles
+        user_roles = [role.name.lower() for role in user.roles]
+        for role in self.allowed_roles:
+            if role.lower() in user_roles:
+                return True
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have permission to access this resource",
+        )

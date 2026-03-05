@@ -11,7 +11,6 @@ export interface RegisterData {
   password: string;
   username: string;
   fullname: string;
-  role?: 'technicien' | 'admin';
 }
 
 export interface LoginData {
@@ -22,7 +21,7 @@ export interface LoginData {
 export interface UserData {
   email: string;
   uid: string;
-  role: string;
+  roles: string[];
 }
 
 export interface LoginResponse {
@@ -98,7 +97,7 @@ class AuthService {
         return {
           email: payload.user.email,
           uid: payload.user.user_uid,
-          role: payload.user.role,
+          roles: payload.user.roles || [],
         };
       }
 
