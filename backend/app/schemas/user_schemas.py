@@ -1,4 +1,5 @@
-from typing import Annotated, Literal
+from typing import Annotated, List
+from uuid import UUID
 from pydantic import BaseModel, EmailStr, StringConstraints
 
 
@@ -7,20 +8,19 @@ class UserCreate(BaseModel):
     password: Annotated[str, StringConstraints(min_length=8, max_length=100)]
     username: Annotated[str, StringConstraints(max_length=10)]
     fullname: Annotated[str, StringConstraints(min_length=4, max_length=20)]
-    role: Literal["technicien", "admin"] = "technicien"
 
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
 class UserOut(BaseModel):
-    id: int
+    id: UUID
     email: EmailStr
     username: str
     fullname: str
-    phone: str | None
+    profile_image: str | None = None
     is_verified: bool
-    role: str
+    roles: List[str] = []
 
     class Config:
         from_attributes = True

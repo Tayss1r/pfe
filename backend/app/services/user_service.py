@@ -1,64 +1,84 @@
 from pydantic import EmailStr
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio.session import AsyncSession
+from sqlalchemy import select, insert
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from ..db.models import User, Role
+from ..db.models import User, Role, user_role_table
 from ..schemas.user_schemas import UserCreate
-
 from ..utils import hash
 
 
 class UserService:
+
     @staticmethod
     async def get_user_by_email(email: EmailStr, session: AsyncSession):
         stmt = (
             select(User)
-            .options(selectinload(User.roles)) # Eager load roles to avoid lazy loading issues
+            .options(selectinload(User.roles))
             .where(User.email == email)
         )
+
         result = await session.execute(stmt)
         return result.scalar_one_or_none()
 
     @staticmethod
     async def user_exists(email: EmailStr, session: AsyncSession):
-        return await UserService.get_user_by_email(email, session) is not None
+        stmt = select(User.id).where(User.email == email)
+        result = await session.execute(stmt)
+        return result.scalar_one_or_none() is not None
 
     @staticmethod
     async def create_user(user: UserCreate, session: AsyncSession):
-        user_dict = user.model_dump() # convert Pydantic to SQLAlchemy model
 
-        # Extract password and role (handle separately)
-        plain_password = user_dict.pop('password')
-        role_name = user_dict.pop('role')
+        data = user.model_dump()
+
+        plain_password = data.pop("password")
         hashed_pwd = hash(plain_password)
 
-        # Create user with hashed password (without role)
-        new_user = User(**user_dict, hashed_password=hashed_pwd)
+        new_user = User(**data, hashed_password=hashed_pwd)
 
         session.add(new_user)
-        await session.flush()
+        await session.flush()  # ensures new_user.id is generated
 
-        # Fetch or create the role and assign it
-        stmt = select(Role).where(Role.name == role_name)
-        result = await session.execute(stmt)
-        role = result.scalar_one_or_none()
+        role_stmt = select(Role.id).where(Role.name == "technicien")
+        role_result = await session.execute(role_stmt)
+        role_id = role_result.scalar_one_or_none()
 
-        if role:
-            new_user.roles.append(role)
+        if role_id:
+            # Insert directly into association table to avoid lazy-loading the relationship
+            await session.execute(
+                insert(user_role_table).values(user_id=new_user.id, role_id=role_id)
+            )
 
         await session.commit()
-        await session.refresh(new_user)
 
-        return new_user
+        # Always reload entity with eager relationships
+        stmt = (
+            select(User)
+            .options(selectinload(User.roles))
+            .where(User.id == new_user.id)
+        )
+
+        result = await session.execute(stmt)
+        user_with_roles = result.scalar_one()
+
+        return user_with_roles
 
     @staticmethod
     async def update_user(user: User, update_data: dict, session: AsyncSession):
-        """Update user attributes with the provided data dictionary"""
+
         for key, value in update_data.items():
             setattr(user, key, value)
 
         await session.commit()
-        await session.refresh(user)
 
-        return user
+        stmt = (
+            select(User)
+            .options(selectinload(User.roles))
+            .where(User.id == user.id)
+        )
+
+        result = await session.execute(stmt)
+        updated_user = result.scalar_one()
+
+        return updated_user

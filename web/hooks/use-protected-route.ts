@@ -44,7 +44,7 @@ export const useProtectedRoute = (options: UseProtectedRouteOptions = {}) => {
       }
 
       // Check role if required
-      if (requiredRole && user && user.role !== requiredRole) {
+      if (requiredRole && user && !user.roles?.includes(requiredRole)) {
         router.push('/unauthorized');
         return;
       }

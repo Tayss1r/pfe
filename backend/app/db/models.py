@@ -18,6 +18,7 @@ from sqlalchemy.sql import func
 from .database import Base
 from sqlalchemy import Table, Column
 
+
 user_role_table = Table(
     "user_role",
     Base.metadata,
@@ -50,7 +51,7 @@ class Role(Base):
 
     # relationships
     users: Mapped[List["User"]] = relationship(
-        "User", secondary=user_role_table, back_populates="roles"
+        "User", secondary=user_role_table, back_populates="roles", lazy="noload"
     )
 
 
@@ -60,10 +61,11 @@ class User(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    username: Mapped[str] = mapped_column(unique=True, nullable=False)
-    fullname: Mapped[str] = mapped_column(nullable=False)
+    username: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
+    fullname: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    profile_image: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, server_default="true", nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, server_default="false", nullable=False)
     created_at: Mapped[datetime] = mapped_column(
@@ -78,11 +80,38 @@ class User(Base):
 
     # relationships
     roles: Mapped[List["Role"]] = relationship(
-        "Role", secondary=user_role_table, back_populates="users"
+        "Role", secondary=user_role_table, back_populates="users", lazy="selectin"
     )
     interventions: Mapped[List["Intervention"]] = relationship(
-        "Intervention", back_populates="technician"
+        "Intervention", back_populates="technician", lazy="noload"
     )
+
+    def __init__(self, *args, **kwargs):
+        # Accept 'password' kwarg in constructor to avoid TypeError from declarative ctor
+        password = kwargs.pop("password", None)
+        # Pass other kwargs to SQLAlchemy's constructor
+        super().__init__(*args, **kwargs)
+        # If a password was provided, use the property setter to hash/assign it
+        if password is not None:
+            # Note: this is synchronous CPU work only (hashing), no DB IO
+            self.password = password
+
+    # write-only password property to accept either raw password or already-hashed value
+    @property
+    def password(self) -> None:
+        raise AttributeError("password is write-only")
+
+    @password.setter
+    def password(self, value: Optional[str]) -> None:
+        if value is None:
+            self.hashed_password = None  # type: ignore[assignment]
+            return
+        # If value looks like a bcrypt hash (starts with $2), assume it's already hashed
+        if isinstance(value, str) and value.startswith("$2"):
+            self.hashed_password = value
+        else:
+            # hash synchronously (passlib) - no DB IO
+            self.hashed_password = hash_password(value)
 
 
 class Client(Base):
@@ -146,6 +175,7 @@ class Equipment(Base):
     brand: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     model: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     type: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    image: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     client_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("client.id", ondelete="RESTRICT"), nullable=False
@@ -232,6 +262,7 @@ class SparePart(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     reference_code: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    image: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), server_default=func.now(), nullable=False
     )
