@@ -86,33 +86,6 @@ class User(Base):
         "Intervention", back_populates="technician", lazy="noload"
     )
 
-    def __init__(self, *args, **kwargs):
-        # Accept 'password' kwarg in constructor to avoid TypeError from declarative ctor
-        password = kwargs.pop("password", None)
-        # Pass other kwargs to SQLAlchemy's constructor
-        super().__init__(*args, **kwargs)
-        # If a password was provided, use the property setter to hash/assign it
-        if password is not None:
-            # Note: this is synchronous CPU work only (hashing), no DB IO
-            self.password = password
-
-    # write-only password property to accept either raw password or already-hashed value
-    @property
-    def password(self) -> None:
-        raise AttributeError("password is write-only")
-
-    @password.setter
-    def password(self, value: Optional[str]) -> None:
-        if value is None:
-            self.hashed_password = None  # type: ignore[assignment]
-            return
-        # If value looks like a bcrypt hash (starts with $2), assume it's already hashed
-        if isinstance(value, str) and value.startswith("$2"):
-            self.hashed_password = value
-        else:
-            # hash synchronously (passlib) - no DB IO
-            self.hashed_password = hash_password(value)
-
 
 class Client(Base):
     __tablename__ = "client"
