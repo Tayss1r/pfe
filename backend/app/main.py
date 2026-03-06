@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from .api.auth import auth_router
 from .api.equipment import equipment_router
 from .api.contact import contact_router
+from .api.intervention import intervention_router
 from .api.admin import (
     admin_dashboard_router,
     admin_equipment_router,
@@ -30,6 +31,9 @@ app.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 
 # Include equipment router
 app.include_router(equipment_router, prefix="/equipment", tags=["Equipment"])
+
+# Include intervention router
+app.include_router(intervention_router, prefix="/interventions", tags=["Interventions"])
 
 # Include contact router
 app.include_router(contact_router, prefix="/contact", tags=["Contact"])

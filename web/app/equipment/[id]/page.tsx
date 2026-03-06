@@ -23,7 +23,7 @@ import {
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/theme-toggle';
 
-type ActiveTab = 'documents' | 'spareparts' | 'manufacturer' | 'client';
+type ActiveTab = 'documents' | 'spareparts' | 'interventions' | 'manufacturer' | 'client';
 
 export default function EquipmentDetailPage() {
   const { isLoading: authLoading, isAuthenticated } = useAuth();
@@ -177,6 +177,7 @@ export default function EquipmentDetailPage() {
   const tabs = [
     { key: 'documents', label: `Documents (${equipment.technical_documents.length})`, icon: '📚' },
     { key: 'spareparts', label: `Spare Parts (${equipment.spare_parts.length})`, icon: '🔧' },
+    { key: 'interventions', label: 'Interventions', icon: '🔧' },
     { key: 'manufacturer', label: 'Contact Manufacturer', icon: '📧' },
     { key: 'client', label: 'Contact Client', icon: '📨' },
   ];
@@ -193,6 +194,12 @@ export default function EquipmentDetailPage() {
             </div>
             <div className="flex items-center gap-4">
               <ThemeToggle />
+              <Link
+                href={`/interventions?equipment=${equipmentId}`}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Start Intervention
+              </Link>
               <Link href="/equipment" className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-gray-600 rounded-lg transition-colors">
                 ← Back to Search
               </Link>
@@ -268,6 +275,23 @@ export default function EquipmentDetailPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
           {activeTab === 'documents' && <DocumentsTab documents={equipment.technical_documents} />}
           {activeTab === 'spareparts' && <SparePartsTab spareParts={equipment.spare_parts} />}
+          {activeTab === 'interventions' && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-4">🔧</div>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                Intervention Management
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                View and manage interventions for this equipment
+              </p>
+              <Link
+                href={`/interventions?equipment=${equipmentId}`}
+                className="inline-flex items-center gap-2 px-6 py-3 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Go to Interventions →
+              </Link>
+            </div>
+          )}
           {activeTab === 'manufacturer' && (
             <ContactManufacturerTab
               manufacturer={equipment.manufacturer}
